@@ -1,0 +1,131 @@
+@font-face {
+    font-family: FontAwesome;
+    src: url(fonts/fa.otf);
+}
+
+*:not(button) {
+    outline: none;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Source Sans', sans-serif !important;
+    /*font-family: FontAwesome !important;*/
+
+    color: #444;
+}
+
+body {
+    height: 100vh;
+    overflow: auto;
+    overflow-x: hidden;
+    font-size: 14pt;
+}
+
+.header {
+    width: 100vw;
+    left: 0;
+
+	color: #eee;
+}
+
+.navbar-brand img {
+    height: 50px;
+    object-fit:contain;
+    max-height: 100%;
+    max-width: 100%;
+    display: block;
+    margin: auto auto;
+}
+
+.wrapper {
+    display: grid;
+    grid-template-columns: auto minmax(auto, 1100px) auto;
+    width: 100vw;
+}
+
+.wrapper * {
+    position: relative !important;
+}
+
+.container {
+    min-height: 100vh;
+    height: auto;
+    position: absolute;
+    width: 100vw !important;
+    padding: 0;
+}
+
+.body {
+    grid-column: 2;
+
+    text-align: center;
+
+    position: relative;
+    margin: 0;
+}
+
+footer {
+    grid-column: 2;
+    position: sticky;
+    top: 100%;
+    text-align: center;
+    width: 100vw;
+    padding-bottom: 30px;
+    box-sizing: border-box;
+    /*background: #fff;*/
+}
+
+@media screen and (max-width: 500px) {
+    .body {
+        grid-column-start: 1;
+        grid-column-end: 3;
+        /*padding: 10px;*/
+    }
+    .header {
+        padding: 0;
+    }
+}
+
+.navbar-toggler {
+    height: 100% !important;
+    animation-fill-mode: forwards;
+}
+
+.collapse {
+    display: block;
+}
+
+.collapse[aria-expanded="false"] {
+    display: none;
+}
+
+.navbar-collapse:not(.in), .navbar-collapse:not(.collapsing) {
+    display: none;
+}
+
+.collapsing, .in {
+    display: block !important;
+}
+
+.social img {
+    max-width: 28px;
+    max-height: 28px;
+
+    box-sizing: content-box;
+    filter: saturate(20%) opacity(80%);
+    padding: 10px;
+}
+
+footer hr {
+    border-top: 1px solid #aaa;
+    /* box-shadow: 0 0 2px 0 #8f8f8f; */
+    width: 50vw;
+    left: 25vw;
+    position: relative;
+}
+
+.footer a {
+    margin: 10px;
+    color: #888;
+    font-weight: 100;
+}

@@ -1,0 +1,16 @@
+{
+	"name": "nodejs-website-boilerplate-and-framework",
+	"version": "1.0.0",
+	"description": "A NodeJS Website template to make your life easier",
+	"main": "server.js",
+	"scripts": {
+		"start": "node server.js",
+		"nodemon": "nodemon server.js"
+	},
+	"author": "Jacob Schneider",
+	"license": "ISC",
+	"homepage": "https://www.jacob-schneider.ga/projects/boilerplate/docs.html",
+	"devDependencies": {
+		"nyc": "^13.3.0"
+	}
+}
