@@ -1,0 +1,12 @@
+3/29/2019, 5:46:50 PM : Listening on 1080
+3/29/2019, 5:46:53 PM : GET / text/html 200
+3/29/2019, 5:47:32 PM : Listening on 1080
+3/29/2019, 5:47:33 PM : GET / text/html 200
+3/29/2019, 5:47:33 PM : GET /res/logo.png image/png 404
+3/29/2019, 5:47:33 PM : GET /js/jquery.min.js text/javascript 200
+3/29/2019, 5:47:33 PM : GET /js/bootstrap.min.js text/javascript 200
+3/29/2019, 5:47:33 PM : GET /css/bootstrap.min.css text/css 200
+3/29/2019, 5:47:33 PM : GET /css/fonts/TisaSans.css text/css 200
+3/29/2019, 5:47:33 PM : GET /css/fonts/SourceSans.css text/css 200
+3/29/2019, 5:47:34 PM : GET /css/fonts/Montserrat.css text/css 200
+3/29/2019, 5:47:34 PM : GET /css/master.css text/css 200

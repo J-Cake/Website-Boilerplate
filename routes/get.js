@@ -1,13 +1,19 @@
-module.exports = function (router) { // You can put routes here from any HTTP method, but to keep things neat, building an API should be done separately.
+const getExtension = require('../utilities/getExtension');
+
+module.exports = function (router) { // You can put routes here from any HTTP method, but to keep things neat, place different methods or subroutes in individual files.
 	router.addRoute("get", /^(.+\/)*(.+\..+)\/?$/, function (req, res) { // match everything with an extension
 		if (["html", "htm"].includes(req.pathname.split('/').pop().split('.').pop()))
 			router.html(req.pathname);
-		else
-			router.static(req.pathname);
+		else {
+			if (["png", "jpg", "gif", "jpeg", "ttf", "woff", "woff2", "otf", "mp4", "m4v", "mov", "mp3", "m3a", "ogg", "wav"].includes(getExtension(req.pathname).toLowerCase())) {
+				router.static(req.pathname, "base64");
+			} else {
+				router.static(req.pathname);
+			}
+		}
 	});
 
 	router.addRoute("get", "/", function (req, res) { // match /
-		console.log('3');
 		router.html("index.html");
 	});
 

@@ -1,5 +1,3 @@
-console.clear();
-
 const http = require("http");
 const url = require("url");
 
@@ -11,9 +9,21 @@ http.IncomingMessage.prototype.appendBody = function (text) {
 	this.body.push(text);
 };
 
-http.ServerResponse.prototype.send = function (body) {
-	this.return = this.return || [];
-	this.return.push(body);
+http.ServerResponse.prototype.send = function (body, encoding = "utf8") {
+	if (typeof body === 'string') {
+		if (this.method !== "HEAD") { // there's no body in a HEAD request so don't send it.
+			if (this.headersSent) {
+				this.write(body, encoding);
+			} else {
+				this.return.push(body);
+				this.encodings.push(encoding);
+			}
+		}
+	}
+};
+
+http.ServerResponse.prototype.doNotEnd = function () {
+	this.suppressEnd = true;
 };
 
 const port = process.argv[2] || 1080;
@@ -21,6 +31,10 @@ const port = process.argv[2] || 1080;
 process.root = __dirname.replace(/\\/g, "/"); // specifies where the server is started from (/)
 
 http.createServer(async (req, res) => {
+	res.suppressEnd = false;
+	res.return = [];
+	res.encodings = [];
+
 	const location = url.parse(req.url);
 
 	const newPath = location.pathname.split('/');
@@ -37,6 +51,8 @@ http.createServer(async (req, res) => {
 	if (location.pathname === "")
 		location.pathname = "/";
 
+	res.method = req.method;
+
 	const call = () => {
 		req = {
 			...req,
@@ -45,25 +61,20 @@ http.createServer(async (req, res) => {
 
 		const status = Router.callRoute(req.method, location.pathname, req, res);
 
-		log(
-			req.method.toUpperCase(),
-			location.pathname,
-			(status.headers || {})["Content-type"] || "text/html",
-			status.code
-		);
+		log(req.method.toUpperCase(), location.pathname, (status.headers || {})["Content-type"] || "text/html", status.code);
 
 		res.writeHead(status.code, {
 			...status.headers,
 			"Content-type": (status.headers || {})["Content-type"] || status.mime || "text/html"
 		});
+		res.headersSent = true;
 
-		res.return = res.return || [];
+		res.return.forEach((i, a) => {
+			res.write(i, res.encodings[a]);
+		});
 
-		if (req.method !== "HEAD")
-		// there's no body in a HEAD request so don't send it.
-			res.write(res.return.join(""));
-
-		res.end();
+		if (!res.suppressEnd)
+			res.end();
 	};
 
 	if (req.method !== "GET") {

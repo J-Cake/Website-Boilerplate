@@ -3,6 +3,8 @@ const path = require('path');
 const url = require('url');
 const methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "COPY", "HEAD", "OPTIONS", "LINK", "UNLINK", "PURGE", "LOCK", "UNLOCK", "PROPFIND", "VIEW"];
 
+const stream = require('stream');
+
 const format = require('./format');
 const securePath = require('./securePath');
 const log = require('./log');
@@ -19,45 +21,79 @@ const Router = class Router {
 		methods.map(i => `${path.join(__dirname, '../routes', i)}.js`).filter(i => fs.existsSync(i)).map(i => require(i)(this)); // load all routes
 	}
 
+	private(location) {
+		const file = path.join(__dirname, "../private", location);
+
+		if (fs.existsSync(file)) {
+			this.res.send(format(fs.readFileSync(file, "utf8")));
+			this.status = 200;
+			this.mime = "text/html";
+		} else {
+			this.res.send(format(this.error(404, location)));
+			this.mime = "text/html";
+		}
+
+		// log("private request:", true);
+	}
+
 	html(location) {
 		const file = securePath(path.join(__dirname, "../public", location));
 
 		if (fs.existsSync(file)) {
 			this.res.send(format(fs.readFileSync(file).toString()));
 			this.status = 200;
+			this.mime = "text/html";
 		} else {
-			this.res.send(format(Router.error(404, location)));
-			this.status = 404;
+			this.res.send(format(this.error(404, location)));
 			this.mime = "text/html";
 		}
 	}
 
-	static(location) {
+	static(location, encoding = "utf8") {
 		const file = securePath(path.join(__dirname, "../public", location));
 
 		if (fs.existsSync(file)) {
-			this.res.send(fs.readFileSync(file).toString());
+			this.res.send(fs.readFileSync(file, encoding), encoding);
 			this.status = 200;
 		} else {
-			this.res.send(Router.error(404, location));
-			this.status = 404;
+			this.res.send(this.error(404, location));
 		}
 	}
 
-	static error(code, file) {
+	stream(location, encoding = "utf8") {
+		const file = securePath(path.join(__dirname, "../public", location));
+
+		if (fs.existsSync(file)) {
+			this.res.doNotEnd();
+			const stm = fs.createReadStream(file, encoding);
+
+			stm.on('data', data => this.res.send(data));
+			stm.on('end', () => {
+				this.res.end('', 'base64');
+			});
+
+			this.status = 200;
+		} else {
+			this.res.send(this.error(404, location));
+		}
+	}
+
+	error(code, file) {
+		this.status = code;
+		this.mime = "text/plain";
 		return `Error ${code}: ${errors(code, file)}`;
 	}
 
 	addRoute(method = "GET", path, callback) {
-		if (path instanceof RegExp || typeof path === "string")
+		if (path instanceof RegExp || typeof path === "string") {
 			if (Router.routes.filter(i => i.method === method.toUpperCase() && i.path === path).length <= 0)
 				Router.routes.push({
 					path,
 					method: method.toUpperCase(),
 					callback
 				});
-			else
-				throw new TypeError("Path must be either string or regular expression");
+		} else
+			throw new TypeError("Path must be either string or regular expression");
 	}
 
 	callRoute(method, path, request, response) {
@@ -69,15 +105,36 @@ const Router = class Router {
 		const routes = Router.routes.filter(i => i && (i.method.toUpperCase() === method.toUpperCase() && (i.path instanceof RegExp ? i.path.test(path) : i.path === path)));
 
 		if (routes.length === 0) {
-			return void this.res.send(Router.error(404, path)) || {
+			return void this.res.send(this.error(404, path)) || {
 				code: 404,
-				mime: getMime(getExtension(this.req.pathname)) // (request.pathname.split('/').pop() || "index.html").split('.').pop() || ".html"
+				mime: getMime(getExtension(this.req.pathname))
 			};
 		}
 
-		const status = routes.map(i => typeof i.callback === "function" ? i.callback(this.req, this.res) || {} : (typeof i.callback === "object") ? i.callback : (function () {
-			throw new Error("Callback must be either a function or object");
-		}).bind(this)).pop() || {};
+		let status = null;
+
+		let shouldContinue = true;
+
+		for (let i of routes) {
+			if (shouldContinue) {
+				shouldContinue = false;
+				if (typeof i.callback === "function" || typeof i.callback === "object") {
+					if (typeof i.callback === "function")
+						status = i.callback(this.req, this.res, () => shouldContinue = true) || {};
+					else
+						status = i.callback;
+				} else {
+					throw new Error("Callback must be either a function or object");
+				}
+			} else {
+				break;
+			}
+		}
+
+		// const status = routes.map(i => typeof i.callback === "function" ? i.callback(this.req, this.res) || {} : (typeof i.callback === "object") ? i.callback : (function () {
+		// 	throw new Error("Callback must be either a function or object");
+		// }).bind(this)).pop() || {};
+
 		const mime = this.mime;
 
 		return {

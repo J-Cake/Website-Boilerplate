@@ -8,8 +8,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Source Sans', sans-serif !important;
-    /*font-family: FontAwesome !important;*/
+    font-family: 'Montserrat', 'Tisa Sans', 'Source Sans', sans-serif !important;
 
     color: #444;
 }
@@ -72,14 +71,12 @@ footer {
     width: 100vw;
     padding-bottom: 30px;
     box-sizing: border-box;
-    /*background: #fff;*/
 }
 
 @media screen and (max-width: 500px) {
     .body {
         grid-column-start: 1;
         grid-column-end: 3;
-        /*padding: 10px;*/
     }
     .header {
         padding: 0;
@@ -118,7 +115,6 @@ footer {
 
 footer hr {
     border-top: 1px solid #aaa;
-    /* box-shadow: 0 0 2px 0 #8f8f8f; */
     width: 50vw;
     left: 25vw;
     position: relative;

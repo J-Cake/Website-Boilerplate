@@ -18,7 +18,7 @@ module.exports = {
 	}).join(`<br/>`),
 
 	"script": args => args.map(i => {
-		const file = path.join(__dirname, 'script', i);
+		const file = path.join(__dirname, 'scripts', i);
 		console.log(file);
 
 		if (fs.existsSync(file))
