@@ -14,7 +14,7 @@ module.exports = function (router) { // You can put routes here from any HTTP me
 	});
 
 	router.addRoute("get", "/", function (req, res) { // match /
-		router.html("index.html");
+		router.html("index.html", {variable: "Hello World"});
 	});
 
 	router.addRoute("get", /^(.[^.]+\/)*(.[^.]+)\/?$/, function (req, res) { // match everything without an extension

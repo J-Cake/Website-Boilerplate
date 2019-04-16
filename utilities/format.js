@@ -4,10 +4,15 @@ const path = require('path');
 const template = fs.readFileSync(path.join(__dirname + "/../", "template.html")).toString();
 const constructs = require('../constructs/constructs.config');
 
-module.exports = function format(string) {
+module.exports = function format(string, vars = {}) {
 	string = string.toString();
 
 	let output = template.replace("#content#", string);
+
+	Object.keys(vars).forEach(i => {
+		const regex = new RegExp(`#=${i}#`, 'g');
+		output = output.replace(regex, match => vars[i]);
+	});
 
 	Object.keys(constructs).forEach(i => {
 		const regex = new RegExp(`(?<!\\\\)#${i}(?:\\((.[^,]+?)(?:,\\s*(.[^,]+?))*?\\))?(?!\\\\)#`, 'g');
@@ -20,8 +25,8 @@ module.exports = function format(string) {
 		if (fs.existsSync(fileName))
 			return fs.readFileSync(fileName).toString();
 		else
-			return `The file "${match.slice(1, -1)}" does not exist`
+			return `The file "${match.slice(1, -1)}" does not exist`;
 	});
 
-	return output;
+	return output.replace(/\\#/g, '#');
 };

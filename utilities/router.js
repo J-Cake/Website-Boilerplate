@@ -36,11 +36,11 @@ const Router = class Router {
 		// log("private request:", true);
 	}
 
-	html(location) {
+	html(location, vars) {
 		const file = securePath(path.join(__dirname, "../public", location));
 
 		if (fs.existsSync(file)) {
-			this.res.send(format(fs.readFileSync(file).toString()));
+			this.res.send(format(fs.readFileSync(file).toString(), vars));
 			this.status = 200;
 			this.mime = "text/html";
 		} else {
