@@ -4,6 +4,8 @@ const url = require("url");
 const Router = require("./utilities/router");
 const log = require("./utilities/log");
 
+const format = require('./utilities/format');
+
 http.IncomingMessage.prototype.appendBody = function (text) {
 	this.body = this.body || [];
 	this.body.push(text);
@@ -22,15 +24,17 @@ http.ServerResponse.prototype.send = function (body, encoding = "utf8") {
 	}
 };
 
+http.ServerResponse.prototype.suppressEnd = false;
 http.ServerResponse.prototype.doNotEnd = function () {
 	this.suppressEnd = true;
+	// console.log(this.suppressEnd);
 };
 
-const port = process.argv[2] || 1080;
+process.port = Number(process.argv[2]) || 1080;
 
 process.root = __dirname.replace(/\\/g, "/"); // specifies where the server is started from (/)
 
-http.createServer(async (req, res) => {
+const server = http.createServer(async (req, res) => {
 	res.suppressEnd = false;
 	res.return = [];
 	res.encodings = [];
@@ -53,19 +57,20 @@ http.createServer(async (req, res) => {
 
 	res.method = req.method;
 
-	const call = () => {
+	const call = async () => {
 		req = {
 			...req,
 			...location
 		};
 
-		const status = Router.callRoute(req.method, location.pathname, req, res);
+		const status = await Router.callRoute(req.method, location.pathname, req, res);
 
-		log(req.method.toUpperCase(), location.pathname, (status.headers || {})["Content-type"] || "text/html", status.code);
+		log(req.method.toUpperCase(), status.code, req.url, (status.headers || {})["Content-type"] || "text/html", (status.headers || {})["Content-length"] || 0, req.connection.remoteAddress);
 
 		res.writeHead(status.code, {
 			...status.headers,
-			"Content-type": (status.headers || {})["Content-type"] || status.mime || "text/html"
+			"Content-type": (status.headers || {})["Content-type"] || status.mime || "text/html",
+			"Content-length": (status.headers || {})["Content-length"] || status.size || 0
 		});
 		res.headersSent = true;
 
@@ -77,13 +82,31 @@ http.createServer(async (req, res) => {
 			res.end();
 	};
 
+	const error = err => {
+		res.writeHead(500, {"Content-type": "text/html"});
+		res.write(format(`<div class="error">#error.html#</div>`, { err: err.stack || err, code: "500" }));
+		res.end();
+	};
+
 	if (req.method !== "GET") {
 		req.on("data", data => req.appendBody(data));
-		req.on("end", call);
+
+		try {
+			req.on("end", call);
+		} catch (err) {
+			error(err);
+		}
 	} else {
-		call();
+		try {
+			await call();
+		} catch (err) {
+			error (err);
+		}
 	}
-}).listen(port, e => {
+
+});
+
+server.listen(process.port, e => {
 	if (e) throw e;
-	log("Listening on", port);
+	log("Listening on", process.port);
 });

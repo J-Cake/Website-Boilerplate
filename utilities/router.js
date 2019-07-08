@@ -18,33 +18,37 @@ const Router = class Router {
 	constructor() {
 		this.constructor.routes = [];
 
-		methods.map(i => `${path.join(__dirname, '../routes', i)}.js`).filter(i => fs.existsSync(i)).map(i => require(i)(this)); // load all routes
+		// methods.map(i => `${path.join(__dirname, '../routes', i)}.js`).filter(i => fs.existsSync(i)).map(i => require(i)(this)); // load all routes
+		require('../routes/routes').map(i => i(this));
 	}
 
-	private(location) {
-		const file = path.join(__dirname, "../private", location);
+	private(location, vars, templates) {
+		const file = path.join(process.root, "private", location);
 
 		if (fs.existsSync(file)) {
-			this.res.send(format(fs.readFileSync(file, "utf8")));
+			this.res.send(format(fs.readFileSync(file, "utf8"), vars, templates));
 			this.status = 200;
 			this.mime = "text/html";
 		} else {
-			this.res.send(format(this.error(404, location)));
+			this.res.send(format(this.fileError(404, location), vars, templates));
 			this.mime = "text/html";
 		}
-
-		// log("private request:", true);
 	}
 
-	html(location, vars) {
+	error(code) {
+		this.res.send(format(this.fileError(code, this.req.pathname)));
+		this.mime = "text/html";
+	}
+
+	html(location, vars, templates) {
 		const file = securePath(path.join(__dirname, "../public", location));
 
 		if (fs.existsSync(file)) {
-			this.res.send(format(fs.readFileSync(file).toString(), vars));
+			this.res.send(format(fs.readFileSync(file).toString(), vars, templates));
 			this.status = 200;
 			this.mime = "text/html";
 		} else {
-			this.res.send(format(this.error(404, location)));
+			this.res.send(format(this.fileError(404, location)));
 			this.mime = "text/html";
 		}
 	}
@@ -56,8 +60,14 @@ const Router = class Router {
 			this.res.send(fs.readFileSync(file, encoding), encoding);
 			this.status = 200;
 		} else {
-			this.res.send(this.error(404, location));
+			this.res.send(this.fileError(404, location));
 		}
+	}
+
+	format(text, vars, templates) {
+		this.res.send(format(text, vars, templates));
+		this.status = 200;
+		this.mime = "text/html";
 	}
 
 	stream(location, encoding = "utf8") {
@@ -74,11 +84,11 @@ const Router = class Router {
 
 			this.status = 200;
 		} else {
-			this.res.send(this.error(404, location));
+			this.res.send(this.fileError(404, location));
 		}
 	}
 
-	error(code, file) {
+	fileError(code, file) {
 		this.status = code;
 		this.mime = "text/plain";
 		return `Error ${code}: ${errors(code, file)}`;
@@ -105,7 +115,7 @@ const Router = class Router {
 		const routes = Router.routes.filter(i => i && (i.method.toUpperCase() === method.toUpperCase() && (i.path instanceof RegExp ? i.path.test(path) : i.path === path)));
 
 		if (routes.length === 0) {
-			return void this.res.send(this.error(404, path)) || {
+			return void this.res.send(this.fileError(404, path)) || {
 				code: 404,
 				mime: getMime(getExtension(this.req.pathname))
 			};
@@ -151,9 +161,9 @@ const Router = class Router {
 		Router.routes.splice(Router.routes.find(arg => arg.method.toUpperCase() === method.toUpperCase() && path === arg.path), 1);
 	}
 
-	redirect(_url) {
+	redirect(_url, method = this.req.method) {
 		this.req = {...this.req, ...url.parse(_url)};
-		this.callRoute.bind(this)(this.req.method, _url, this.req, this.res);
+		this.callRoute.bind(this)(method, _url, this.req, this.res);
 	};
 };
 
