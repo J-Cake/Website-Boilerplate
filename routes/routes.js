@@ -1,1 +1,1 @@
-module.exports = [require('./GET')];
+module.exports = [require('./get')];
